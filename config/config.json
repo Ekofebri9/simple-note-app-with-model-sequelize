@@ -5,7 +5,7 @@
     "database": "task_week1_with_model",
     "host": "127.0.0.1",
     "dialect": "mysql",
-    "operatorsAliases": false
+    "operatorsAliases": "as"
   },
   "test": {
     "username": "root",

@@ -16,7 +16,7 @@ exports.getAllNote = function(req, res){
     let search = req.query.search || null;
     let sort = req.query.sort || 'desc';
     let pages = parseInt(req.query.page) || 1;
-    let limiter = parseInt(req.query.limit) || 1;
+    let limiter = parseInt(req.query.limit) || 10;
     let offseter = (pages-1)*limiter;
     let where = {} ;
    
@@ -24,12 +24,12 @@ exports.getAllNote = function(req, res){
     if (idNote != null ){
         where = {id: idNote};
     } else if(search != null){
-        where = {title :{[Op.like]: '%'+search+'%' }}
+        where = {title :{[Op.like]: `%${search.toLowerCase()}%` }}
     } 
     modelNote.findAndCountAll({
         attributes: ['id','title','content','created_at','updated_at'],
         where: where,
-        include: [ { model: modelCategory , attributes: ['category_name'] } ],
+        include: [ { model: modelCategory, attributes: ['id','category_name'] } ],//perlu di edit
         order: [ ['created_at', sort] ],
         limit: limiter,
         offset: offseter
@@ -91,9 +91,15 @@ exports.postNote = function(req, res){
         error[1] = err.message;
         response.failed(error,res);
     } else {
-        modelNote.create({ title: title, content: content, category_id: idCategory })
-        .then(function(result){
+        modelNote.create({ title: title.toLowerCase(), content: content.toLowerCase(), category_id: idCategory })
+        .then(function(data){
+            modelNote.findOne({
+                attributes: ['id','title','content','created_at','updated_at'],
+                where: {id: data.id},
+                include: [ { model: modelCategory, attributes: ['id','category_name'] } ], })
+            .then(function(result){
             response.success(result,res)
+            })
         }).catch(function(err) {
             error[0] = 400;
             error[1] = err.message;
@@ -105,13 +111,13 @@ exports.postNote = function(req, res){
 
 exports.postCategory = function(req, res){
     let categoryName = req.body.category_name;
-    let date = new Date();
+    let icon = req.body.icon;
     if(categoryName == null){
         error[0] = 400;
         error[1] = err.message;
         response.failed(error,res);
     } else {
-        modelCategory.create( { category_name: categoryName } )
+        modelCategory.create( { category_name: categoryName.toLowerCase(), icon: icon.toLowerCase() } )
         .then(function(result){
             response.success(result,res)
         }).catch(function(err) {
@@ -134,16 +140,22 @@ exports.putNote = function (req, res){
         error[1] = 'id_note is empty';
         response.failed(error,res);
     } else if(title != null){
-        attributes.title = title ;
+        attributes.title = title.toLowerCase();
     } if (content != null){
-        attributes.content = content
+        attributes.content = content.toLowerCase()
     } if (categoryId != null){
         attributes.category_id = categoryId;
     } console.log(attributes)
     modelNote.update( attributes, { where: {id: idNote} } )
         .then(function(rowsUpdate){
             if (rowsUpdate != 0) {
-                response.success("success to save data", res) 
+                modelNote.findOne({
+                    attributes: ['id','title','content','created_at','updated_at'],
+                    where: {id: idNote},
+                    include: [ { model: modelCategory, attributes: ['id','category_name'] } ], })
+                .then(function(result){
+                response.success(result,res)
+                })
             }
         }).catch(function(err) {
             error[0] = 400;
@@ -161,7 +173,7 @@ exports.putCategory = function (req, res){
         error[1] = "catagory_name or id_category is empty";
         response.failed(error,res);
     } else {
-        modelCategory.update( {category_name: categoryName}, { where: {id: idCategory} } )
+        modelCategory.update( {category_name: categoryName.toLowerCase()}, { where: {id: idCategory} } )
         .then(function(rowsUpdate){
             if (rowsUpdate != 0) {
                 response.success("success to save data", res) 
@@ -185,7 +197,7 @@ exports.deleteNote = function(req, res) {
         modelNote.destroy( { where: { id: idNote } } )
         .then(function(rowsDelete){
             if (rowsDelete != 0) {
-                response.success("success for deleting data", res) 
+                response.success(parseInt(idNote), res) 
             } else {
                 error[0] = 404;
                 error[1] = "there isn't note with id="+idNote;

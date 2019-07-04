@@ -4,7 +4,7 @@ exports.success = function(values, res){
     const data ={
         status: 200,
         message: "success request to server",
-        content: values,
+        data: values,
     };
     res.json(data);
     res.end();
