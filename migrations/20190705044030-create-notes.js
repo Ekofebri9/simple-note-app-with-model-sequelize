@@ -9,27 +9,19 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       title: {
-        allowNull: false,
         type: Sequelize.STRING
       },
       content: {
-        allowNull: false,
-        type: Sequelize.TEXT
+        type: Sequelize.STRING
       },
       category_id: {
-        allowNull: false,
-        foreignKey: true,
-        type: Sequelize.INTEGER,
-        references: {
-          model: 'categories',
-          key: 'id'
-        }
+        type: Sequelize.INTEGER
       },
-      created_at: {
+      createdAt: {
         allowNull: false,
         type: Sequelize.DATE
       },
-      updated_at: {
+      updatedAt: {
         allowNull: false,
         type: Sequelize.DATE
       }

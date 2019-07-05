@@ -2,7 +2,7 @@
 
 const response = require('./response');
 const connection = require('./connection');
-const modelNote = require('./models').note;
+const modelNote = require('./models').notes;
 const modelCategory = require('./models').category;
 const Op = require('sequelize').Op; 
 
@@ -14,6 +14,7 @@ exports.index = function(req, res, next ){
 exports.getAllNote = function(req, res){
     let idNote = req.params.idNote;
     let search = req.query.search || null;
+    let categoryId = req.query.category_id || null;
     let sort = req.query.sort || 'desc';
     let pages = parseInt(req.query.page) || 1;
     let limiter = parseInt(req.query.limit) || 10;
@@ -23,14 +24,16 @@ exports.getAllNote = function(req, res){
     let error = [], data = [];
     if (idNote != null ){
         where = {id: idNote};
+    } else if(categoryId != null){
+        where = {category_id :categoryId}
     } else if(search != null){
         where = {title :{[Op.like]: `%${search.toLowerCase()}%` }}
     } 
     modelNote.findAndCountAll({
-        attributes: ['id','title','content','created_at','updated_at'],
+        attributes: ['id','title','content','createdAt','updatedAt'],
         where: where,
-        include: [ { model: modelCategory, attributes: ['id','category_name'] } ],//perlu di edit
-        order: [ ['created_at', sort] ],
+        include: [ { model: modelCategory, attributes: ['id','category_name'] } ],
+        order: [ ['createdAt', sort] ],
         limit: limiter,
         offset: offseter
     })
@@ -92,20 +95,19 @@ exports.postNote = function(req, res){
         response.failed(error,res);
     } else {
         modelNote.create({ title: title.toLowerCase(), content: content.toLowerCase(), category_id: idCategory })
-        .then(function(data){
+        .then(function(data){ return data.id })
+        .then((id) => {
             modelNote.findOne({
-                attributes: ['id','title','content','created_at','updated_at'],
-                where: {id: data.id},
-                include: [ { model: modelCategory, attributes: ['id','category_name'] } ], })
-            .then(function(result){
-            response.success(result,res)
-            })
-        }).catch(function(err) {
+            attributes: ['id','title','content','createdAt','updatedAt'],
+            where: {id: id},
+            include: [ { model: modelCategory, attributes: ['id','category_name'] } ], })
+            .then(function(result){ response.success(result,res) })
+          })
+        .catch(function(err) {
             error[0] = 400;
             error[1] = err.message;
             response.failed(error,res)
           })
-    
     };
 };
 
@@ -117,7 +119,7 @@ exports.postCategory = function(req, res){
         error[1] = err.message;
         response.failed(error,res);
     } else {
-        modelCategory.create( { category_name: categoryName.toLowerCase(), icon: icon.toLowerCase() } )
+        modelCategory.create( { category_name: categoryName, icon: icon.toLowerCase() } )
         .then(function(result){
             response.success(result,res)
         }).catch(function(err) {
@@ -150,7 +152,7 @@ exports.putNote = function (req, res){
         .then(function(rowsUpdate){
             if (rowsUpdate != 0) {
                 modelNote.findOne({
-                    attributes: ['id','title','content','created_at','updated_at'],
+                    attributes: ['id','title','content','createdAt','updatedAt'],
                     where: {id: idNote},
                     include: [ { model: modelCategory, attributes: ['id','category_name'] } ], })
                 .then(function(result){
@@ -222,7 +224,7 @@ exports.deleteCategory = function(req, res) {
         modelCategory.destroy( { where: { id: idCategory } } )
         .then(function(rowsDelete){
             if (rowsDelete != 0) {
-                response.success("success for deleting data", res) 
+                response.success(parseInt(idCategory), res) 
             } else {
                 error[0] = 404;
                 error[1] = "there isn't catagory with id="+idCategory;

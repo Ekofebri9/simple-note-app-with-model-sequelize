@@ -8,20 +8,17 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      category_name: {
-        allowNull: false,
-        type: Sequelize.STRING,
-        unique: true
+      catogory_name: {
+        type: Sequelize.STRING
       },
       icon: {
-        allowNull: false,
-        type: Sequelize.STRING,
+        type: Sequelize.STRING
       },
-      created_at: {
+      createdAt: {
         allowNull: false,
         type: Sequelize.DATE
       },
-      updated_at: {
+      updatedAt: {
         allowNull: false,
         type: Sequelize.DATE
       }
