@@ -1,7 +1,6 @@
 'use strict'
 
 const response = require('./response');
-const connection = require('./connection');
 const modelNote = require('./models').notes;
 const modelCategory = require('./models').category;
 const Op = require('sequelize').Op; 
@@ -14,26 +13,30 @@ exports.index = function(req, res, next ){
 exports.getAllNote = function(req, res){
     let idNote = req.params.idNote;
     let search = req.query.search || null;
-    let categoryId = req.query.category_id || null;
+    let categoryId = parseInt(req.query.category_id)|| null;
     let sort = req.query.sort || 'desc';
     let pages = parseInt(req.query.page) || 1;
     let limiter = parseInt(req.query.limit) || 10;
     let offseter = (pages-1)*limiter;
     let where = {} ;
-   
     let error = [], data = [];
     if (idNote != null ){
         where = {id: idNote};
-    } else if(categoryId != null){
-        where = {category_id :categoryId}
-    } else if(search != null){
-        where = {title :{[Op.like]: `%${search.toLowerCase()}%` }}
-    } 
+    } else {
+        if (categoryId != null && search != null) {
+            where = { category_id :categoryId, title :{[Op.like]: `%${search.toLowerCase()}%` }}
+        } else if (categoryId != null){
+            where = {category_id :categoryId}
+        } else if (search != null){
+            where = {title :{[Op.like]: `%${search.toLowerCase()}%` }}
+        } 
+    }
+    
     modelNote.findAndCountAll({
         attributes: ['id','title','content','createdAt','updatedAt'],
         where: where,
         include: [ { model: modelCategory, attributes: ['id','category_name'] } ],
-        order: [ ['createdAt', sort] ],
+        order: [ ['updatedAt', sort] ],
         limit: limiter,
         offset: offseter
     })
@@ -49,6 +52,8 @@ exports.getAllNote = function(req, res){
             data[3] = pages;
             data[4] = Math.ceil(result.count/limiter);
             data[5] = limiter;
+            data[6] = categoryId;
+            data[7] = sort;
             response.successPage(data, res);
         }
     })
