@@ -57,6 +57,7 @@ DB_NAME=task_week1_with_model_sequelize
 * `/notes?search=` (Search operation by title)
 * `/notes?sort=` (Sort operation) // fill with asc or desc
 * `/notes?page=` (Paging for limiting notes) // fill only with integer
+
 **2. POST**
 * `/note`
 * `/category`
